@@ -16,14 +16,13 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 
-
 **Instrucciones:**
 
 1. Instalar dependencias y ejecutar:
 
 ```bash
 
-dartpubget
+dart pubget
 
 dart run bin/main.dart
 
