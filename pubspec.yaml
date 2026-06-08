@@ -35,9 +35,17 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Almacenamiento encriptado para el token de sesion y las variables de tiempo.
+  # En Android usa EncryptedSharedPreferences (AES) respaldado por el Keystore;
+  # en iOS usa el Keychain.
+  flutter_secure_storage: ^9.2.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Permite simular el paso del tiempo en los tests del contador de inactividad.
+  fake_async: ^1.3.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

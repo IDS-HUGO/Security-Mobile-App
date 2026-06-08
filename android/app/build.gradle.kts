@@ -20,7 +20,9 @@ android {
         applicationId = "com.example.appmobile_security"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // flutter_secure_storage usa EncryptedSharedPreferences, que requiere
+        // API 23+ para encriptar el token y las variables de tiempo de sesion.
+        minSdk = maxOf(23, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
