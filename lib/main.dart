@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'core/constants/app_routes.dart';
 import 'core/services/fake_gps_guard_service.dart';
+import 'core/services/session_manager.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/inactivity_detector.dart';
 import 'features/home/presentation/views/home_view.dart';
 import 'features/login/presentation/views/login_view.dart';
 import 'features/register/presentation/views/register_view.dart';
@@ -11,8 +13,52 @@ void main() {
   runApp(const AppMobileSecurity());
 }
 
-class AppMobileSecurity extends StatelessWidget {
+class AppMobileSecurity extends StatefulWidget {
   const AppMobileSecurity({super.key});
+
+  @override
+  State<AppMobileSecurity> createState() => _AppMobileSecurityState();
+}
+
+class _AppMobileSecurityState extends State<AppMobileSecurity> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> _messengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+  final SessionManager _session = SessionManager.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _session.expiry.addListener(_onSessionExpired);
+  }
+
+  @override
+  void dispose() {
+    _session.expiry.removeListener(_onSessionExpired);
+    super.dispose();
+  }
+
+  /// Reacciona cuando la sesion expira por inactividad: regresa al login y
+  /// avisa al usuario. La sesion ya fue cerrada y persistida por el manager.
+  void _onSessionExpired() {
+    final SessionExpiry? expiry = _session.expiry.value;
+    if (expiry == null) {
+      return;
+    }
+    _session.expiry.value = null; // consume el evento
+
+    _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      AppRoutes.login,
+      (route) => false,
+    );
+    _messengerKey.currentState
+      ?..clearSnackBars()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Tu sesión se cerró por inactividad.'),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +66,16 @@ class AppMobileSecurity extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'App Mobile Security',
       theme: AppTheme.lightTheme,
+      navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: _messengerKey,
+      // El detector envuelve todas las rutas; solo reinicia el contador cuando
+      // hay una sesion activa (de lo contrario recordActivity es un no-op).
+      builder: (context, child) {
+        return InactivityDetector(
+          onActivity: _session.recordActivity,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const FakeGpsGate(),
       routes: {
         AppRoutes.login: (_) => const LoginView(),

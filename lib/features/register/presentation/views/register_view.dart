@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_routes.dart';
+import '../../../../core/services/session_manager.dart';
 import '../../../../core/widgets/app_action_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/secure_screen_mixin.dart';
@@ -34,12 +35,21 @@ class _RegisterViewState extends State<RegisterView> with SecureScreenMixin<Regi
       return;
     }
 
-    if (user != null) {
-      Navigator.of(context).pushReplacementNamed(
-        AppRoutes.home,
-        arguments: user,
-      );
+    if (user == null) {
+      return;
     }
+
+    // Arranca la sesion: genera/persiste el token y las variables de tiempo en
+    // el almacen encriptado y enciende el contador de inactividad.
+    await SessionManager.instance.startSession();
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.home,
+      arguments: user,
+    );
   }
 
   @override

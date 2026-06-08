@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import '../models/app_user.dart';
 
 class FakeAuthRepository {
@@ -14,8 +17,12 @@ class FakeAuthRepository {
   ];
 
   AppUser? _currentUser;
+  String? _sessionToken;
 
   AppUser? get currentUser => _currentUser;
+
+  /// Token de la sesion autenticada actual (null si no hay sesion).
+  String? get currentToken => _sessionToken;
 
   Future<AppUser> login({
     required String email,
@@ -36,6 +43,7 @@ class FakeAuthRepository {
     }
 
     _currentUser = foundUser;
+    _sessionToken = _generateToken();
     return foundUser;
   }
 
@@ -62,10 +70,19 @@ class FakeAuthRepository {
 
     _users.add(newUser);
     _currentUser = newUser;
+    _sessionToken = _generateToken();
     return newUser;
   }
 
   void logout() {
     _currentUser = null;
+    _sessionToken = null;
+  }
+
+  /// Genera un token de sesion simulado pero criptograficamente aleatorio.
+  String _generateToken() {
+    final Random random = Random.secure();
+    final List<int> bytes = List<int>.generate(24, (_) => random.nextInt(256));
+    return 'sess_${base64Url.encode(bytes).replaceAll('=', '')}';
   }
 }
