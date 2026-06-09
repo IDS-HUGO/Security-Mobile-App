@@ -6,10 +6,10 @@ class SupabaseService {
   static final SupabaseService instance = SupabaseService._internal();
 
   /// Cambiar por la URL real de tu proyecto de Supabase
-  static const String supabaseUrl = 'https://tu-proyecto.supabase.co';
+  static const String supabaseUrl = 'https://wtwzidvnevimyfrlhbz.supabase.co';
 
   /// Cambiar por la Anon Key real de tu proyecto de Supabase
-  static const String supabaseAnonKey = 'tu-anon-key-de-supabase';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0d3ppZHZuZXZpdm15ZnJsaGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5OTIyMjEsImV4cCI6MjA5NjU2ODIyMX0.OLqfKJznTKd4QcSMo9PupEK5kJWtt4b-QKfWUySlYNs';
 
   bool _initialized = false;
   bool get isInitialized => _initialized;
@@ -54,11 +54,10 @@ class SupabaseService {
 
     try {
       final emailClean = email.toLowerCase().trim();
-      await Supabase.instance.client.from('user_devices').upsert({
-        'email': emailClean,
-        'fcm_token': token,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }, onConflict: 'email');
+      await Supabase.instance.client.rpc('upsert_fcm_token', params: {
+        'p_email': emailClean,
+        'p_fcm_token': token,
+      });
       developer.log('Token FCM sincronizado con Supabase para el usuario: $emailClean');
     } catch (e) {
       developer.log('Error al sincronizar FCM token en Supabase: $e');
@@ -76,10 +75,10 @@ class SupabaseService {
 
     try {
       final emailClean = email.toLowerCase().trim();
-      await Supabase.instance.client
-          .from('user_devices')
-          .update({'fcm_token': null})
-          .eq('email', emailClean);
+      await Supabase.instance.client.rpc('upsert_fcm_token', params: {
+        'p_email': emailClean,
+        'p_fcm_token': null,
+      });
       developer.log('Token FCM removido de Supabase para el usuario: $emailClean');
     } catch (e) {
       developer.log('Error al remover FCM token en Supabase: $e');
