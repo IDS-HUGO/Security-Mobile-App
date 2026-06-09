@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/session_manager.dart';
@@ -6,6 +7,7 @@ import '../../../../core/widgets/app_action_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/secure_screen_mixin.dart';
 import '../viewmodels/login_viewmodel.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -124,6 +126,8 @@ class _LoginViewState extends State<LoginView> with SecureScreenMixin<LoginView>
                         ),
                         const SizedBox(height: 16),
                         const _DemoCredentialsCard(),
+                        const SizedBox(height: 16),
+                        const _LoginFcmTokenCard(),
                       ],
                     ),
                   ),
@@ -156,6 +160,81 @@ class _DemoCredentialsCard extends StatelessWidget {
             SizedBox(height: 8),
             Text('Correo: demo@demo.com'),
             Text('Clave: 123456'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoginFcmTokenCard extends StatelessWidget {
+  const _LoginFcmTokenCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      color: Colors.grey.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.key, size: 18, color: Colors.orange),
+                SizedBox(width: 8),
+                Text(
+                  'FCM Token (Para pruebas de Wipe)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
+            const Divider(),
+            ValueListenableBuilder<String?>(
+              valueListenable: FirebaseMessagingService.instance.fcmToken,
+              builder: (context, token, _) {
+                if (token == null) {
+                  return const Text(
+                    'Cargando Token FCM...',
+                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Text(
+                      token,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 9,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: token));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Token FCM copiado al portapapeles.'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.copy, size: 14),
+                        label: const Text(
+                          'Copiar Token',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

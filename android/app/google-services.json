@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "415829405138",
+    "project_id": "sums-seguridad",
+    "storage_bucket": "sums-seguridad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:415829405138:android:97e5eae7decaf0ddd32c0b",
+        "android_client_info": {
+          "package_name": "com.example.appmobile_security"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc72soWE57cF-UTaF0uNsSFjWozR3hRSM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

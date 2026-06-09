@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'core/constants/app_routes.dart';
 import 'core/services/fake_gps_guard_service.dart';
 import 'core/services/session_manager.dart';
+import 'core/services/firebase_messaging_service.dart';
+import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/inactivity_detector.dart';
 import 'features/home/presentation/views/home_view.dart';
 import 'features/login/presentation/views/login_view.dart';
 import 'features/register/presentation/views/register_view.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicialización de Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Inicialización del Servicio de Mensajería (FCM)
+  await FirebaseMessagingService.instance.initialize();
+
+  // Inicialización del Servicio de Supabase
+  await SupabaseService.instance.initialize();
+  
   runApp(const AppMobileSecurity());
 }
 
@@ -30,11 +47,18 @@ class _AppMobileSecurityState extends State<AppMobileSecurity> {
   void initState() {
     super.initState();
     _session.expiry.addListener(_onSessionExpired);
+    _session.remoteWipeEvent.addListener(_onRemoteWipe);
+    
+    // Verificar si ocurrió un wipe en segundo plano
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPendingRemoteWipe();
+    });
   }
 
   @override
   void dispose() {
     _session.expiry.removeListener(_onSessionExpired);
+    _session.remoteWipeEvent.removeListener(_onRemoteWipe);
     super.dispose();
   }
 
@@ -58,6 +82,95 @@ class _AppMobileSecurityState extends State<AppMobileSecurity> {
           content: Text('Tu sesión se cerró por inactividad.'),
         ),
       );
+  }
+
+  /// Reacciona ante un evento de Wipe Remoto recibido en primer plano.
+  void _onRemoteWipe() {
+    if (_session.remoteWipeEvent.value) {
+      _session.remoteWipeEvent.value = false; // consume el evento
+      
+      // Forzar redirección inmediata al Login
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+
+      // Mostrar diálogo de advertencia e información
+      _showWipeDialog(
+        'Limpieza Remota (Wipe Remoto)',
+        'Se recibió una orden por Firebase (FCM) para tu usuario. '
+        'Se han eliminado de forma segura los siguientes campos sensibles del almacenamiento:\n\n'
+        '• Usuario\n'
+        '• Contraseña\n'
+        '• Correo Electrónico\n'
+        '• Token de Sesión',
+      );
+    }
+  }
+
+  /// Verifica si hay una notificación de wipe en segundo plano pendiente y la maneja.
+  Future<void> _checkPendingRemoteWipe() async {
+    final pending = await _session.checkAndClearPendingRemoteWipe();
+    if (pending) {
+      _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+      _showWipeDialog(
+        'Limpieza Remota en Segundo Plano',
+        'Se ejecutó una orden de limpieza remota (Wipe Remoto) mientras la aplicación estaba cerrada o en segundo plano.\n\n'
+        'Todos tus datos sensibles del almacenamiento seguro han sido borrados de forma segura.',
+      );
+    }
+  }
+
+  /// Muestra un diálogo de advertencia no descartable.
+  void _showWipeDialog(String title, String message) {
+    final BuildContext? context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              SizedBox(width: 8),
+              Text(
+                'Wipe Remoto Activo',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Text(message),
+            ],
+          ),
+          actions: <Widget>[
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+              ),
+              child: const Text('Entendido'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
