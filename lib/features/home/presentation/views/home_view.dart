@@ -28,10 +28,7 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _logout() async {
     final NavigatorState navigator = Navigator.of(context);
     await SessionManager.instance.endSessionManually();
-    navigator.pushNamedAndRemoveUntil(
-      AppRoutes.login,
-      (route) => false,
-    );
+    navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 
   @override
@@ -45,10 +42,7 @@ class _HomeViewState extends State<HomeView> {
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
+          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
         ],
       ),
       body: SafeArea(
@@ -63,12 +57,16 @@ class _HomeViewState extends State<HomeView> {
               Text(
                 user == null ? 'Bienvenido' : 'Hola, ${user.name}',
                 textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
-                user == null ? 'No hay sesión activa.' : 'Correo: ${user.email}',
+                user == null
+                    ? 'No hay sesión activa.'
+                    : 'Correo: ${user.email}',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -113,9 +111,7 @@ class _InactivityCountdownCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'La sesión se cierra tras $timeoutSeconds s sin interacción.',
-            ),
+            Text('La sesión se cierra tras $timeoutSeconds s sin interacción.'),
             const SizedBox(height: 12),
             ValueListenableBuilder<Duration>(
               valueListenable: SessionManager.instance.remaining,
@@ -243,10 +239,7 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.black54),
-            ),
+            child: Text(label, style: const TextStyle(color: Colors.black54)),
           ),
           Expanded(
             child: Text(
@@ -289,17 +282,23 @@ class _SensitiveFieldsCardState extends State<_SensitiveFieldsCard> {
         username: user.name,
         password: user.password,
         email: user.email,
-        token: SessionManager.instance.hasActiveSession ? "sess_demo_token_123456" : "",
+        token: SessionManager.instance.hasActiveSession
+            ? "sess_demo_token_123456"
+            : "",
       );
       _loadSensitiveData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Datos sensibles recargados manualmente.')),
+        const SnackBar(
+          content: Text('Datos sensibles recargados manualmente.'),
+        ),
       );
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inicia sesión para rellenar automáticamente.')),
+        const SnackBar(
+          content: Text('Inicia sesión para rellenar automáticamente.'),
+        ),
       );
     }
   }
@@ -323,7 +322,10 @@ class _SensitiveFieldsCardState extends State<_SensitiveFieldsCard> {
                     SizedBox(width: 8),
                     Text(
                       'Datos Sensibles (Secure Storage)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -341,14 +343,18 @@ class _SensitiveFieldsCardState extends State<_SensitiveFieldsCard> {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 final data = snapshot.data ?? {};
                 final username = data['username'];
                 final password = data['password'];
                 final email = data['email'];
                 final token = data['session_token'];
-                
-                final bool isEmpty = username == null && password == null && email == null && token == null;
+
+                final bool isEmpty =
+                    username == null &&
+                    password == null &&
+                    email == null &&
+                    token == null;
 
                 if (isEmpty) {
                   return Center(
@@ -356,17 +362,28 @@ class _SensitiveFieldsCardState extends State<_SensitiveFieldsCard> {
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: Column(
                         children: [
-                          const Icon(Icons.cleaning_services_rounded, color: Colors.red, size: 36),
+                          const Icon(
+                            Icons.cleaning_services_rounded,
+                            color: Colors.red,
+                            size: 36,
+                          ),
                           const SizedBox(height: 8),
                           const Text(
                             '¡Datos Sensibles Wipados!',
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
                             'Los 4 campos sensibles han sido borrados de forma segura del almacenamiento del dispositivo.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton.icon(
@@ -388,7 +405,9 @@ class _SensitiveFieldsCardState extends State<_SensitiveFieldsCard> {
                     _InfoRow(
                       label: 'TOKEN DE SESION',
                       value: token != null
-                          ? (token.length > 20 ? '${token.substring(0, 18)}...' : token)
+                          ? (token.length > 20
+                                ? '${token.substring(0, 18)}...'
+                                : token)
                           : '[Vacío]',
                     ),
                   ],
@@ -407,14 +426,18 @@ class _FcmTokenCard extends StatelessWidget {
 
   void _showSimulatedFcmDialog(BuildContext context) {
     final user = FakeAuthRepository.instance.currentUser;
-    final emailController = TextEditingController(text: user?.email ?? 'demo@demo.com');
+    final emailController = TextEditingController(
+      text: user?.email ?? 'demo@demo.com',
+    );
     final wordController = TextEditingController(text: 'aguacate');
 
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: const [
               Icon(Icons.terminal, color: Colors.blueAccent),
@@ -445,7 +468,7 @@ class _FcmTokenCard extends StatelessWidget {
                 decoration: const InputDecoration(
                   labelText: 'target_email (Payload)',
                   border: OutlineInputBorder(),
-                  helperText: 'Debe coincidir con tu correo actual o estar vacío',
+                  helperText: 'Debe coincidir con tu correo actual',
                 ),
               ),
             ],
@@ -458,7 +481,7 @@ class _FcmTokenCard extends StatelessWidget {
             FilledButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                
+
                 final enteredWord = wordController.text.trim().toLowerCase();
                 final enteredEmail = emailController.text.trim().toLowerCase();
                 final activeUserEmail = user?.email.toLowerCase() ?? '';
@@ -469,17 +492,33 @@ class _FcmTokenCard extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: Colors.orange.shade800,
-                      content: Text('Simulación: Palabra clave "$enteredWord" incorrecta. Comando IGNORADO.'),
+                      content: Text(
+                        'Simulación: Palabra clave "$enteredWord" incorrecta. Comando IGNORADO.',
+                      ),
                     ),
                   );
                   return;
                 }
 
-                if (enteredEmail.isNotEmpty && enteredEmail != activeUserEmail) {
+                if (enteredEmail.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: Colors.orange.shade800,
-                      content: Text('Simulación: El correo "$enteredEmail" no coincide con el usuario activo. Comando IGNORADO.'),
+                      content: const Text(
+                        'Simulación: Falta target_email. Comando IGNORADO.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                if (enteredEmail != activeUserEmail) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.orange.shade800,
+                      content: Text(
+                        'Simulación: El correo "$enteredEmail" no coincide con el usuario activo. Comando IGNORADO.',
+                      ),
                     ),
                   );
                   return;
@@ -489,10 +528,12 @@ class _FcmTokenCard extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Colors.green,
-                    content: Text('Simulación: ¡Filtros aprobados! Detonando Wipe Remoto...'),
+                    content: Text(
+                      'Simulación: ¡Filtros aprobados! Detonando Wipe Remoto...',
+                    ),
                   ),
                 );
-                
+
                 // Esperar un momento para ver la notificación
                 await Future.delayed(const Duration(milliseconds: 600));
                 await SessionManager.instance.remoteWipe();
@@ -530,7 +571,7 @@ class _FcmTokenCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            
+
             // Estado de conexión a Supabase
             Container(
               padding: const EdgeInsets.all(8),
@@ -538,12 +579,16 @@ class _FcmTokenCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSupabaseInitialized
                     ? Colors.green.shade50
-                    : (isSupabaseConfigured ? Colors.orange.shade50 : Colors.blue.shade50),
+                    : (isSupabaseConfigured
+                          ? Colors.orange.shade50
+                          : Colors.blue.shade50),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isSupabaseInitialized
                       ? Colors.green.shade200
-                      : (isSupabaseConfigured ? Colors.orange.shade200 : Colors.blue.shade200),
+                      : (isSupabaseConfigured
+                            ? Colors.orange.shade200
+                            : Colors.blue.shade200),
                 ),
               ),
               child: Row(
@@ -551,7 +596,9 @@ class _FcmTokenCard extends StatelessWidget {
                   Icon(
                     isSupabaseInitialized
                         ? Icons.cloud_done
-                        : (isSupabaseConfigured ? Icons.cloud_queue : Icons.cloud_off),
+                        : (isSupabaseConfigured
+                              ? Icons.cloud_queue
+                              : Icons.cloud_off),
                     color: isSupabaseInitialized
                         ? Colors.green
                         : (isSupabaseConfigured ? Colors.orange : Colors.blue),
@@ -563,21 +610,23 @@ class _FcmTokenCard extends StatelessWidget {
                       isSupabaseInitialized
                           ? 'Supabase Conectado (FCM sincronizado)'
                           : (isSupabaseConfigured
-                              ? 'Supabase inicializando...'
-                              : 'Supabase en Modo Local/Simulado'),
+                                ? 'Supabase inicializando...'
+                                : 'Supabase en Modo Local/Simulado'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isSupabaseInitialized
                             ? Colors.green.shade900
-                            : (isSupabaseConfigured ? Colors.orange.shade900 : Colors.blue.shade900),
+                            : (isSupabaseConfigured
+                                  ? Colors.orange.shade900
+                                  : Colors.blue.shade900),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             const Text(
               'La aplicación detona el Wipe Remoto cuando recibe una notificación FCM dirigida a este usuario que contiene la palabra clave:',
               style: TextStyle(fontSize: 12, color: Colors.black54),
@@ -589,7 +638,10 @@ class _FcmTokenCard extends StatelessWidget {
                 backgroundColor: Colors.red.shade700,
                 label: const Text(
                   'Palabra clave: aguacate',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -638,7 +690,9 @@ class _FcmTokenCard extends StatelessWidget {
                             Clipboard.setData(ClipboardData(text: token));
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Token FCM copiado al portapapeles.'),
+                                content: Text(
+                                  'Token FCM copiado al portapapeles.',
+                                ),
                               ),
                             );
                           },
@@ -651,7 +705,10 @@ class _FcmTokenCard extends StatelessWidget {
                             side: const BorderSide(color: Colors.red),
                           ),
                           onPressed: () => _showSimulatedFcmDialog(context),
-                          icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                          icon: const Icon(
+                            Icons.delete_forever_rounded,
+                            size: 18,
+                          ),
                           label: const Text('Simular Wipe'),
                         ),
                       ],

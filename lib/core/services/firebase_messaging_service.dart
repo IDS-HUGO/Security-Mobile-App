@@ -36,20 +36,26 @@ bool _shouldTriggerWipe(RemoteMessage message, String? currentUserEmail) {
   }
 
   if (!hasTriggerWord) {
-    developer.log('Wipe FCM ignorado: no contiene la palabra clave "$triggerWord".');
+    developer.log(
+      'Wipe FCM ignorado: no contiene la palabra clave "$triggerWord".',
+    );
     return false;
   }
 
   // 3. Validar si está dirigido a un usuario específico
-  final targetEmail = data['target_email'];
-  if (targetEmail != null && targetEmail.toString().isNotEmpty) {
-    if (currentUserEmail == null ||
-        currentUserEmail.toLowerCase() != targetEmail.toString().toLowerCase().trim()) {
-      developer.log(
-        'Wipe FCM ignorado: el usuario de destino ($targetEmail) no coincide con el logueado ($currentUserEmail).',
-      );
-      return false;
-    }
+  final String targetEmail =
+      data['target_email']?.toString().trim().toLowerCase() ?? '';
+  if (targetEmail.isEmpty) {
+    developer.log('Wipe FCM ignorado: falta target_email en el payload.');
+    return false;
+  }
+
+  final String activeEmail = currentUserEmail?.trim().toLowerCase() ?? '';
+  if (activeEmail.isEmpty || activeEmail != targetEmail) {
+    developer.log(
+      'Wipe FCM ignorado: el usuario de destino ($targetEmail) no coincide con el logueado ($currentUserEmail).',
+    );
+    return false;
   }
 
   return true;
@@ -61,13 +67,13 @@ bool _shouldTriggerWipe(RemoteMessage message, String? currentUserEmail) {
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Inicializar Firebase para este isolate de segundo plano
   await Firebase.initializeApp();
-  
+
   developer.log('Mensaje de FCM recibido en segundo plano: ${message.data}');
-  
+
   final store = SecureSessionStore();
   final sensitiveFields = await store.readSensitiveFields();
   final userEmail = sensitiveFields['email'];
-  
+
   if (_shouldTriggerWipe(message, userEmail)) {
     // Limpiar el token de Supabase en segundo plano si es posible
     if (userEmail != null) {
@@ -86,7 +92,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class FirebaseMessagingService {
   FirebaseMessagingService._internal();
-  static final FirebaseMessagingService instance = FirebaseMessagingService._internal();
+  static final FirebaseMessagingService instance =
+      FirebaseMessagingService._internal();
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final ValueNotifier<String?> fcmToken = ValueNotifier<String?>(null);
@@ -127,10 +134,10 @@ class FirebaseMessagingService {
     // Configurar handler de mensajes en primer plano (Foreground)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       developer.log('Mensaje de FCM recibido en primer plano: ${message.data}');
-      
+
       final fields = await SessionManager.instance.readSensitiveFields();
       final userEmail = fields['email'];
-      
+
       if (_shouldTriggerWipe(message, userEmail)) {
         developer.log('Detonando Wipe Remoto en primer plano...');
         await SessionManager.instance.remoteWipe();
@@ -138,4 +145,3 @@ class FirebaseMessagingService {
     });
   }
 }
-
