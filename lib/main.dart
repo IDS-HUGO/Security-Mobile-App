@@ -210,7 +210,8 @@ class UsbDebuggingGate extends StatefulWidget {
   State<UsbDebuggingGate> createState() => _UsbDebuggingGateState();
 }
 
-class _UsbDebuggingGateState extends State<UsbDebuggingGate> {
+class _UsbDebuggingGateState extends State<UsbDebuggingGate>
+    with WidgetsBindingObserver {
   final UsbDebuggingGuardService _guardService = UsbDebuggingGuardService();
   late Future<bool> _blockFuture;
   bool _dialogShown = false;
@@ -218,7 +219,29 @@ class _UsbDebuggingGateState extends State<UsbDebuggingGate> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _blockFuture = _guardService.shouldBlockApp();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _recheck();
+    }
+  }
+
+  void _recheck() {
+    if (!mounted) return;
+    setState(() {
+      _dialogShown = false;
+      _blockFuture = _guardService.shouldBlockApp();
+    });
   }
 
   void _showBlockedDialog() {
