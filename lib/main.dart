@@ -36,15 +36,19 @@ class AppMobileSecurity extends StatefulWidget {
   State<AppMobileSecurity> createState() => _AppMobileSecurityState();
 }
 
-class _AppMobileSecurityState extends State<AppMobileSecurity> {
+class _AppMobileSecurityState extends State<AppMobileSecurity>
+    with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _messengerKey =
       GlobalKey<ScaffoldMessengerState>();
   final SessionManager _session = SessionManager.instance;
+  final UsbDebuggingGuardService _usbGuard = UsbDebuggingGuardService();
+  bool _usbDialogShown = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _session.expiry.addListener(_onSessionExpired);
     _session.remoteWipeEvent.addListener(_onRemoteWipe);
 
@@ -56,9 +60,59 @@ class _AppMobileSecurityState extends State<AppMobileSecurity> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _session.expiry.removeListener(_onSessionExpired);
     _session.remoteWipeEvent.removeListener(_onRemoteWipe);
     super.dispose();
+  }
+
+  /// Revalida la Depuracion USB cada vez que la app vuelve al primer plano.
+  /// Vive en la raiz del arbol (nunca se desmonta), por lo que sigue activo
+  /// aunque el usuario ya haya navegado fuera del UsbDebuggingGate inicial.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkUsbDebugging();
+    }
+  }
+
+  /// Consulta el guard y, si la Depuracion USB esta activa, congela la app con
+  /// un dialogo persistente sin importar en que pantalla este el usuario.
+  Future<void> _checkUsbDebugging() async {
+    final bool shouldBlock = await _usbGuard.shouldBlockApp();
+    if (!shouldBlock || _usbDialogShown) {
+      return;
+    }
+
+    final BuildContext? context = _navigatorKey.currentContext;
+    if (context == null || !context.mounted) {
+      return;
+    }
+
+    _usbDialogShown = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text('Entorno no seguro'),
+            content: const Text(
+              'La aplicacion se bloqueo por politicas de seguridad porque '
+              'la Depuracion USB esta activa. Desactiva esta opcion en los '
+              'ajustes de desarrollador del dispositivo y vuelve a abrir la app.',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: _usbGuard.closeApp,
+                child: const Text('Cerrar aplicacion'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// Reacciona cuando la sesion expira por inactividad: regresa al login y
@@ -210,8 +264,7 @@ class UsbDebuggingGate extends StatefulWidget {
   State<UsbDebuggingGate> createState() => _UsbDebuggingGateState();
 }
 
-class _UsbDebuggingGateState extends State<UsbDebuggingGate>
-    with WidgetsBindingObserver {
+class _UsbDebuggingGateState extends State<UsbDebuggingGate> {
   final UsbDebuggingGuardService _guardService = UsbDebuggingGuardService();
   late Future<bool> _blockFuture;
   bool _dialogShown = false;
@@ -219,29 +272,7 @@ class _UsbDebuggingGateState extends State<UsbDebuggingGate>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _blockFuture = _guardService.shouldBlockApp();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _recheck();
-    }
-  }
-
-  void _recheck() {
-    if (!mounted) return;
-    setState(() {
-      _dialogShown = false;
-      _blockFuture = _guardService.shouldBlockApp();
-    });
   }
 
   void _showBlockedDialog() {
