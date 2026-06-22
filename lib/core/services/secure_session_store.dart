@@ -30,6 +30,58 @@ class SecureSessionStore {
   static const String _kClosedAt = 'session_closed_at';
   static const String _kClosedReason = 'session_closed_reason';
 
+  // Campos sensibles requeridos por la práctica
+  static const String _kSensitiveUsername = 'sensitive_username';
+  static const String _kSensitivePassword = 'sensitive_password';
+  static const String _kSensitiveEmail = 'sensitive_email';
+  static const String _kSensitiveSessionToken = 'sensitive_session_token';
+  static const String _kRemoteWipePending = 'remote_wipe_pending_notification';
+
+  /// Guarda los 4 campos considerados sensibles.
+  Future<void> saveSensitiveFields({
+    required String username,
+    required String password,
+    required String email,
+    required String token,
+  }) async {
+    await Future.wait<void>([
+      _storage.write(key: _kSensitiveUsername, value: username),
+      _storage.write(key: _kSensitivePassword, value: password),
+      _storage.write(key: _kSensitiveEmail, value: email),
+      _storage.write(key: _kSensitiveSessionToken, value: token),
+    ]);
+  }
+
+  /// Lee los campos sensibles guardados.
+  Future<Map<String, String?>> readSensitiveFields() async {
+    final results = await Future.wait([
+      _storage.read(key: _kSensitiveUsername),
+      _storage.read(key: _kSensitivePassword),
+      _storage.read(key: _kSensitiveEmail),
+      _storage.read(key: _kSensitiveSessionToken),
+    ]);
+    return {
+      'username': results[0],
+      'password': results[1],
+      'email': results[2],
+      'session_token': results[3],
+    };
+  }
+
+  /// Escribe la bandera para notificar un wipe en segundo plano.
+  Future<void> setRemoteWipePending(bool pending) {
+    return _storage.write(
+      key: _kRemoteWipePending,
+      value: pending ? 'true' : 'false',
+    );
+  }
+
+  /// Lee la bandera de wipe en segundo plano.
+  Future<bool> getRemoteWipePending() async {
+    final value = await _storage.read(key: _kRemoteWipePending);
+    return value == 'true';
+  }
+
   /// Guarda (o sobrescribe) la sesion completa en el almacen encriptado.
   Future<void> saveSession(SessionData session) async {
     await Future.wait<void>([
@@ -87,7 +139,7 @@ class SecureSessionStore {
     );
   }
 
-  /// Borra por completo la sesion del almacen encriptado.
+  /// Borra por completo la sesion y los datos sensibles del almacen encriptado.
   Future<void> clear() async {
     await Future.wait<void>([
       _storage.delete(key: _kToken),
@@ -96,6 +148,10 @@ class SecureSessionStore {
       _storage.delete(key: _kLastActivityAt),
       _storage.delete(key: _kClosedAt),
       _storage.delete(key: _kClosedReason),
+      _storage.delete(key: _kSensitiveUsername),
+      _storage.delete(key: _kSensitivePassword),
+      _storage.delete(key: _kSensitiveEmail),
+      _storage.delete(key: _kSensitiveSessionToken),
     ]);
   }
 

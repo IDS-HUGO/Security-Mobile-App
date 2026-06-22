@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/session_data.dart';
+import '../models/app_user.dart';
 import 'fake_auth_repository.dart';
 import 'inactivity_monitor.dart';
 import 'secure_session_store.dart';
+import 'supabase_service.dart';
+import 'firebase_messaging_service.dart';
 
 /// Motivo y momento del cierre de una sesion.
 class SessionExpiry {
@@ -49,6 +52,9 @@ class SessionManager {
   final ValueNotifier<SessionExpiry?> expiry =
       ValueNotifier<SessionExpiry?>(null);
 
+  /// Evento de Wipe Remoto. La UI lo observa para forzar la navegación al Login.
+  final ValueNotifier<bool> remoteWipeEvent = ValueNotifier<bool>(false);
+
   InactivityMonitor? _monitor;
   String? _token;
   DateTime? _startedAt;
@@ -75,12 +81,77 @@ class SessionManager {
       ),
     );
 
+    // Asignación automática de los 4 campos sensibles en el Secure Storage
+    final AppUser? user = _auth.currentUser;
+    if (user != null) {
+      await _store.saveSensitiveFields(
+        username: user.name,
+        password: user.password,
+        email: user.email,
+        token: _token ?? '',
+      );
+
+      // Sincronizar el Token FCM con Supabase
+      final String? fcmToken = FirebaseMessagingService.instance.fcmToken.value;
+      await SupabaseService.instance.syncFcmToken(user.email, fcmToken);
+    }
+
     _monitor?.dispose();
     _monitor = InactivityMonitor(
       timeout: inactivityTimeout,
       onTimeout: _handleInactivityTimeout,
       onTick: (Duration value) => remaining.value = value,
     )..start();
+  }
+
+  /// Limpia los datos de sesión y campos sensibles (Wipe Remoto).
+  Future<void> remoteWipe() async {
+    _stopMonitor();
+
+    // Obtener el correo del usuario antes de limpiar el Secure Storage para desvincular el token en Supabase
+    final Map<String, String?> sensitiveFields = await _store.readSensitiveFields();
+    final String? userEmail = sensitiveFields['email'] ?? _auth.currentUser?.email;
+    if (userEmail != null) {
+      await SupabaseService.instance.clearFcmToken(userEmail);
+    }
+
+    _auth.logout();
+    _token = null;
+    _startedAt = null;
+    remaining.value = Duration.zero;
+
+    // Borrar todo el Secure Storage (incluyendo campos sensibles)
+    await _store.clear();
+
+    // Emitir evento para la interfaz
+    remoteWipeEvent.value = true;
+  }
+
+  /// Verifica si ocurrió un wipe en segundo plano y limpia la bandera.
+  Future<bool> checkAndClearPendingRemoteWipe() async {
+    final pending = await _store.getRemoteWipePending();
+    if (pending) {
+      await _store.setRemoteWipePending(false);
+    }
+    return pending;
+  }
+
+  /// Expone los campos sensibles del almacenamiento.
+  Future<Map<String, String?>> readSensitiveFields() => _store.readSensitiveFields();
+
+  /// Permite re-guardar o asignar manualmente campos sensibles (para pruebas).
+  Future<void> saveSensitiveFields({
+    required String username,
+    required String password,
+    required String email,
+    required String token,
+  }) async {
+    await _store.saveSensitiveFields(
+      username: username,
+      password: password,
+      email: email,
+      token: token,
+    );
   }
 
   /// Registra una interaccion del usuario: reinicia el contador y, de forma
@@ -106,6 +177,14 @@ class SessionManager {
   /// limpia la autenticacion y borra la sesion del almacen encriptado.
   Future<void> endSessionManually() async {
     _stopMonitor();
+
+    // Desvincular el token FCM en Supabase antes de borrar datos
+    final Map<String, String?> sensitiveFields = await _store.readSensitiveFields();
+    final String? userEmail = sensitiveFields['email'] ?? _auth.currentUser?.email;
+    if (userEmail != null) {
+      await SupabaseService.instance.clearFcmToken(userEmail);
+    }
+
     _auth.logout();
     _token = null;
     _startedAt = null;

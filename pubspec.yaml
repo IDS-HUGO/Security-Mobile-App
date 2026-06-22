@@ -39,6 +39,9 @@ dependencies:
   # En Android usa EncryptedSharedPreferences (AES) respaldado por el Keystore;
   # en iOS usa el Keychain.
   flutter_secure_storage: ^9.2.4
+  firebase_core: ^4.10.0
+  firebase_messaging: ^16.3.0
+  supabase_flutter: ^2.6.0
 
 dev_dependencies:
   flutter_test:
