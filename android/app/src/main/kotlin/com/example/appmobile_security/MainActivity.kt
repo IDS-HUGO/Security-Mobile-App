@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
+import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -14,6 +15,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 	private val secureScreenChannel = "appmobile_security/secure_screen"
 	private val fakeGpsChannel = "appmobile_security/fake_gps"
+	private val usbDebuggingChannel = "appmobile_security/usb_debugging"
 	private val locationPermissionRequestCode = 3201
 	private var pendingFakeGpsResult: MethodChannel.Result? = null
 
@@ -44,6 +46,19 @@ class MainActivity : FlutterActivity() {
 			.setMethodCallHandler { call, result ->
 				when (call.method) {
 					"checkFakeGps" -> checkFakeGps(result)
+					else -> result.notImplemented()
+				}
+			}
+
+		MethodChannel(flutterEngine.dartExecutor.binaryMessenger, usbDebuggingChannel)
+			.setMethodCallHandler { call, result ->
+				when (call.method) {
+					"isUsbDebuggingEnabled" -> result.success(isUsbDebuggingEnabled())
+					"closeApp" -> {
+						finishAffinity()
+						result.success(null)
+					}
+
 					else -> result.notImplemented()
 				}
 			}
@@ -145,6 +160,14 @@ class MainActivity : FlutterActivity() {
 				"message" to "Se necesita permiso de ubicacion para validar Fake GPS.",
 			)
 		}
+	}
+
+	private fun isUsbDebuggingEnabled(): Boolean {
+		return Settings.Global.getInt(
+			contentResolver,
+			Settings.Global.ADB_ENABLED,
+			0,
+		) == 1
 	}
 
 	@Suppress("DEPRECATION")
