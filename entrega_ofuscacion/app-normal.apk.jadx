@@ -1,0 +1,18 @@
+{
+  "projectVersion": 2,
+  "files": [
+    "app-normal.apk"
+  ],
+  "treeExpansionsV2": [],
+  "codeData": {
+    "comments": [],
+    "renames": []
+  },
+  "openTabs": [],
+  "cacheDir": "C:\\Users\\moise\\AppData\\Local\\skylot\\jadx\\cache\\projects\\app-normal-b51b04c813e3e11912c883abe5fa43b7",
+  "enableLiveReload": false,
+  "searchHistory": [],
+  "searchResourcesFilter": "$TEXT",
+  "searchResourcesSizeLimit": 0,
+  "pluginOptions": {}
+}

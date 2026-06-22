@@ -1,0 +1,17 @@
+EJEMPLOS REALES DE RENOMBRADO DE R8 (extraídos de mapping.txt)
+Formato:  ClaseOriginal -> ClaseOfuscada
+==============================================================
+
+--- CLASES RENOMBRADAS (ofuscadas) ---
+_COROUTINE._BOUNDARY -> a.a:
+androidx.activity.ComponentActivity -> b.q:
+com.it_nomads.fluttersecurestorage.FlutterSecureStorage -> p2.a:
+com.it_nomads.fluttersecurestorage.FlutterSecureStoragePlugin -> p2.d:
+com.it_nomads.fluttersecurestorage.ciphers.RSACipherOAEPImplementation -> q2.b:
+com.it_nomads.fluttersecurestorage.ciphers.StorageCipherGCMImplementation -> q2.d:
+
+--- CLASES CONSERVADAS por reglas -keep / manifiesto (mapean a sí mismas) ---
+com.example.appmobile_security.MainActivity -> com.example.appmobile_security.MainActivity:
+com.google.firebase.messaging.FirebaseMessaging -> com.google.firebase.messaging.FirebaseMessaging:
+io.flutter.embedding.android.FlutterActivity -> io.flutter.embedding.android.FlutterActivity:
+io.flutter.embedding.engine.FlutterEngine -> io.flutter.embedding.engine.FlutterEngine:

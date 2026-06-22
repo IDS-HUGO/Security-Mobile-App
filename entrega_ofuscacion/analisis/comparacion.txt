@@ -1,0 +1,71 @@
+================================================================
+ COMPARACIÓN APK NORMAL vs APK OFUSCADA  (datos medidos)
+ Proyecto: appmobile_security (Flutter)
+ Herramientas: flutter build apk, R8, JADX 1.5.5
+================================================================
+
+1) TAMAÑO DEL APK
+   - Normal   : 55,863,288 bytes  = 53.28 MB
+   - Ofuscada : 48,916,168 bytes  = 46.65 MB
+   - Reducción:  6,947,120 bytes  =  6.63 MB  (~12.4 %)
+
+2) BYTECODE DEX (capa Java/Kotlin)
+   - Normal   : 2 archivos  -> classes.dex (6,705,932) + classes2.dex (6,720,888)
+                = 13,426,820 bytes = 12.80 MB
+   - Ofuscada : 1 archivo   -> classes.dex (2,694,916) = 2.57 MB
+   - Reducción: ~80 % del bytecode (el shrinking eliminó código no usado y
+                fusionó los 2 DEX en 1).
+
+3) NÚMERO DE CLASES (según JADX)
+   - Normal   : 3,529 clases  (5,293 archivos .java generados)
+   - Ofuscada : 1,587 clases  (2,624 archivos .java generados)
+   - Reducción: ~55 % de las clases (tree-shaking de R8).
+
+4) MAPA DE OFUSCACIÓN (mapping.txt de R8)
+   - 124,011 líneas; 3,559 clases mapeadas (original -> ofuscado).
+   - Solo se genera en la versión ofuscada (prueba de que R8 renombró).
+
+5) NOMBRES DE CLASES
+   NORMAL (descriptivos):
+     com.it_nomads.fluttersecurestorage.FlutterSecureStoragePlugin
+     com.google.firebase.messaging.FirebaseMessaging
+     com.google.android.gms.cloudmessaging.CloudMessagingReceiver
+     androidx.activity.ComponentActivity
+   OFUSCADA (renombrados a paquetes/clases de 1-2 caracteres):
+     com.it_nomads...FlutterSecureStoragePlugin  ->  p2.d
+     com.it_nomads...ciphers.RSACipherOAEPImplementation -> q2.b
+     androidx.activity.ComponentActivity          ->  b.q
+     _COROUTINE._BOUNDARY                          ->  a.a
+   (La versión ofuscada contiene >100 paquetes de 1-2 caracteres:
+    a/, b/, c/, ... p2/, q2/, z2/ ...)
+
+6) CLASES CONSERVADAS (no renombradas) por reglas -keep o por el manifiesto:
+     com.example.appmobile_security.MainActivity   (entrada del manifiesto)
+     io.flutter.embedding.android.FlutterActivity  (-keep io.flutter.**)
+     io.flutter.embedding.engine.FlutterEngine      (-keep io.flutter.**)
+     com.google.firebase.messaging.FirebaseMessaging (-keep firebase)
+
+7) CÓDIGO DART (lógica de negocio)
+   - No vive en los DEX, sino compilado AOT en lib/<abi>/libapp.so.
+   - Versión normal:   símbolos Dart parcialmente visibles.
+   - Versión ofuscada: --obfuscate ocultó los símbolos; el mapa para
+                       des-ofuscar stacktraces quedó en build/symbols/.
+
+8) FACILIDAD PARA COMPRENDER LA LÓGICA
+   - Normal  : ALTA  (los nombres de plugins revelan qué hace cada parte).
+   - Ofuscada: BAJA  (hay que reconstruir el propósito desde el comportamiento;
+               JADX incluso reportó clases que no pudo decompilar).
+
+9) SÍMBOLOS DART EN libapp.so (arm64)  -- prueba con grep -a
+   Búsqueda de los nombres reales de las clases de negocio dentro del binario:
+
+     Símbolo               Normal   Ofuscada
+     FakeAuthRepository       2         0
+     SessionManager           2         0
+     SecureSessionStore       1         0
+     _generateToken           1         0
+     saveSensitiveFields      1         0
+
+   -> Sin ofuscar, los nombres de la clase de autenticación y de la clase que
+      procesa datos sensibles se recuperan del binario con un simple grep.
+      Con --obfuscate desaparecen por completo (0 coincidencias).
